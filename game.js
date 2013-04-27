@@ -275,7 +275,7 @@ var Game = function () {
         }
         jaws.context.strokeRect(10, 10, player.power*5, 10);
         jaws.context.fillStyle = "rgb(255,255,255)";
-        jaws.context.fillText(clockString(time), 128, 10);
+        jaws.context.fillText(clockString(time), 200, 15);
     };
 
 };
@@ -288,7 +288,7 @@ jaws.onload = function () {
         "arena.png",
         afile("eat"),
         afile("ble"),
-        afile("bu-tense-and-jealous"),
+        //afile("bu-tense-and-jealous"),
     ]);
     jaws.start(Game, {fps: 60});
 };
