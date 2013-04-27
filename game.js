@@ -43,8 +43,8 @@ function terrainInRect(rect) {
 
 // ===========================================================================
 
-var player, press, tick, show, bullets, monsters, eat_sound, death_sound, paused,
-    terrain, viewport, raw_pixeldata, monster_rate;
+var player, press, monster_tick, show, bullets, monsters, eat_sound, death_sound, paused,
+    terrain, viewport, raw_pixeldata, monster_rate, time, tick;
 
 function removeDead(objects) {
     for (i in objects) {
@@ -52,6 +52,21 @@ function removeDead(objects) {
             objects.splice(i, 1); // remove element
         }
     }
+}
+
+function clockString(time) {
+    var seconds = time % 60;
+    var minutes = parseInt(time/60) % 60;
+    var hours = parseInt(time/3600);
+
+    var sstring = seconds.toString();
+    var mstring = minutes.toString();
+    var hstring = hours.toString();
+    if (sstring.length < 2) { sstring = "0" + sstring };
+    if (mstring.length < 2) { mstring = "0" + mstring };
+    if (hstring.length < 2) { hstring = "0" + hstring };
+    return hstring + ":" + mstring + ":" + sstring;
+    //return hstring;
 }
 
 var Game = function () {
@@ -95,6 +110,15 @@ var Game = function () {
     }
 
     this.setup = function () {
+        eat_sound = jaws.assets.get(afile("eat"));
+        death_sound = jaws.assets.get(afile("ble"));
+        music = jaws.assets.get(afile("bu-tense-and-jealous"));
+
+        //music.loop = true;
+        //music.play();
+
+        monster_tick = 0;
+        time = 0;
         tick = 0;
         monster_rate = 30;
 
@@ -107,7 +131,7 @@ var Game = function () {
         player.radius = 0;
         player.max_radius = 20;
         player.speed = 0;
-        player.max_speed = 10;
+        player.max_speed = 7;
         player.accel = 0;
         player.max_accel = 1;
         player.power = 0;
@@ -131,9 +155,6 @@ var Game = function () {
                 paused = false;
             }
         });
-
-        eat_sound = jaws.assets.get(afile("eat"));
-        death_sound = jaws.assets.get(afile("ble"));
 
         player.update = function () {
             if (press) {
@@ -164,6 +185,7 @@ var Game = function () {
                 if (player.power > player.max_power) {
                     player.power = player.max_power;
                 }
+                //player.radius = 8;
             }
             if (player.radius < player.max_radius) {
                 player.radius += 1;
@@ -178,7 +200,11 @@ var Game = function () {
     };
 
     this.update = function () {
-        if (tick == 0) {
+        if (tick >= 60) {
+            tick = 0;
+            time++;
+        }
+        if (monster_tick == 0) {
             monsters.push(newMonster(50, 50));
             monsters.push(newMonster(400, 400));
             monsters.push(newMonster(400, 50));
@@ -218,7 +244,8 @@ var Game = function () {
         removeDead(bullets);
         removeDead(monsters);
 
-        tick = (tick + 1) % (60 * monster_rate);
+        monster_tick = (monster_tick + 1) % (60 * monster_rate);
+        tick++;
     };
 
     this.draw = function () {
@@ -247,6 +274,8 @@ var Game = function () {
             jaws.context.strokeStyle = "rgb(255,0,0)";
         }
         jaws.context.strokeRect(10, 10, player.power*5, 10);
+        jaws.context.fillStyle = "rgb(255,255,255)";
+        jaws.context.fillText(clockString(time), 128, 10);
     };
 
 };
@@ -259,6 +288,7 @@ jaws.onload = function () {
         "arena.png",
         afile("eat"),
         afile("ble"),
+        afile("bu-tense-and-jealous"),
     ]);
     jaws.start(Game, {fps: 60});
 };
