@@ -45,7 +45,8 @@ function terrainInRect(rect) {
 
 var player, press, monster_tick, show, bullets, monsters, eat_sound,
     death_sound, explosion_sound, paused, terrain, viewport, raw_pixeldata,
-    monster_interval, monster_rate, time, tick, bullet_speed, kills;
+    monster_interval, monster_rate, time, tick, bullet_speed, kills,
+    health_crates, health_interval, health_rate, health_tick, best_time;
 
 function removeDead(objects) {
     for (i in objects) {
@@ -70,16 +71,16 @@ function clockString(time) {
     //return hstring;
 }
 
-function randomSpawnPoint(radius) {
+function randomSpawnPoint(r) {
     var angle = Math.random() * 2 * Math.PI;
     var map_center = {x: terrain.width/2, y: terrain.height/2}
-    radius = radius || 315;
+    var radius = r || 360;
     return {x: radius * Math.cos(angle) + map_center.x,
             y: radius * Math.sin(angle) + map_center.y};
 }
 
-function gameOver() {
-    jaws.switchGameState(Game);
+function endGame() {
+    jaws.switchGameState(GameOver);
 }
 
 function newMonster(x, y) {
@@ -91,7 +92,8 @@ function newMonster(x, y) {
     monster.move_chance = 0.5;
     monster.move = function () {
         var chance = this.move_chance;
-        if (terrainInRect(this.rect())) {
+        if (terrainInRect(this.rect()) || this.x < 0 || this.x > terrain.width
+                || this.y < 0 || this.y > terrain.height) {
             chance = this.move_chance / 2;
         }
         if (Math.random() > chance) {
@@ -123,7 +125,7 @@ function newMonster(x, y) {
 }
 
 function newExplosion(x, y) {
-    var anim = new jaws.Animation({sprite_sheet: "explosion.png",
+    var anim = new jaws.Animation({sprite_sheet: "explosion2.png",
         frame_size: [20, 20],
         frame_duration: 100});
     var explosion = new jaws.Sprite({x: x, y: y});
@@ -131,6 +133,14 @@ function newExplosion(x, y) {
     explosion.height = 20;
     explosion.anim = anim;
     return explosion;
+}
+
+function newHealth(x, y) {
+    var health = new jaws.Sprite({image: "health.png", x: x, y: y, anchor: "center"});
+    if (jaws.collideOneWithMany(health, health_crates).length) {
+        return null;
+    }
+    return health;
 }
 
 var Game = function () {
@@ -143,34 +153,49 @@ var Game = function () {
         new_bullet.vx = vx;
         new_bullet.vy = vy;
         bullets.push(new_bullet);
+        shoot_sound.play();
     };
 
     this.setup = function () {
-        eat_sound = jaws.assets.get(afile("eat"));
-        death_sound = jaws.assets.get(afile("ble"));
+        if (time > best_time) best_time = time;
+
+        //eat_sound = jaws.assets.get(afile("eat"));
+        //death_sound = jaws.assets.get(afile("ble"));
         explosion_sound = jaws.assets.get(afile("explosion"));
         hurt_sound = jaws.assets.get(afile("hurt"));
-        music = jaws.assets.get(afile("bu-tense-and-jealous"));
+        get_sound = jaws.assets.get(afile("get"));
+        shoot_sound = jaws.assets.get(afile("shoot"));
+        
+        //music = jaws.assets.get(afile("bu-tense-and-jealous"));
+        //music.loop = true;
+        //music.play();
 
-        terrain = new jaws.Sprite({image: "arena.png", x: 0, y: 0});
+        terrain = new jaws.Sprite({image: "arena_big.png", x: 0, y: 0});
+        terrain.r = 200;
+        terrain.g = 0;
+        terrain.b = 0;
+        terrain.color = 0;
+
         viewport = new jaws.Viewport({max_x: terrain.width, max_y: terrain.height});
         raw_pixeldata = getRawData(terrain);
 
 
-        //music.loop = true;
-        //music.play();
 
         monster_tick = 0;
+        health_tick = 0;
         time = 0;
         tick = 0;
         kills = 0;
-        monster_interval = 20;
+        monster_interval = 15;
         monster_rate = 3;
+        health_interval = 30;
+        health_rate = 1;
         bullet_speed = 4;
 
         bullets = [];
         monsters = [];
         explosions = [];
+        health_crates = [];
 
         var player_pos = randomSpawnPoint(155);
         player = new jaws.Sprite({image: "player.png", x: player_pos.x, y:
@@ -185,8 +210,8 @@ var Game = function () {
         player.max_accel = 1;
         player.power = 0;
         player.max_power = 20;
-        player.hp = 10;
-        player.max_hp = 10;
+        player.hp = 5;
+        player.max_hp = 5;
         player.stunned = 0;
 
         center = {x: player.x, y: player.y};
@@ -206,7 +231,7 @@ var Game = function () {
 
         player.update = function () {
             if (this.hp <= 0) {
-                gameOver();
+                endGame();
             }
             if (press) {
                 press = false;
@@ -252,6 +277,7 @@ var Game = function () {
             if (!this.stunned) {
                 this.hp -= 1; 
                 hurt_sound.play();
+                //eat_sound.play();
                 this.stunned = 1;
             }
         };
@@ -265,29 +291,41 @@ var Game = function () {
             if (player.stunned) {
                 player.stunned--;
             }
+            if (health_tick == 0) {
+                for (var i = 0; i < health_rate; i++) {
+                    var health = null;
+                    while (health === null) {
+                        var spawn = randomSpawnPoint(155);
+                        health = newHealth(spawn.x, spawn.y);
+                    }
+                    health_crates.push(health);
+                }
+            }
+            health_tick = (health_tick + 1) % health_interval;
         }
         if (monster_tick == 0) {
-            //monsters.push(newMonster(50, 50));
-            //monsters.push(newMonster(400, 400));
-            //monsters.push(newMonster(400, 50));
-            //monsters.push(newMonster(50, 400));
             for (var i = 0; i < monster_rate; i++) {
                 var monster = null;
                 while (monster === null) {
                     var spawn = randomSpawnPoint();
                     monster = newMonster(spawn.x, spawn.y);
                 }
-                monsters.push(newMonster(spawn.x, spawn.y));
+                monsters.push(monster);
             }
             monster_rate++;
         }
 
         player.update();
         viewport.centerAround(center);
+        //viewport.forceInsideVisibleArea(center, 50);
 
         for (i in bullets) {
             bullets[i].x += bullets[i].vx;
             bullets[i].y += bullets[i].vy;
+            if (bullets[i].x < 0 || bullets[i].x > terrain.width || bullets[i].y <
+                    0 || bullets[i].y > terrain.height) {
+                bullets[i].dead = true;
+            }
         }
         for (i in monsters) {
             monsters[i].move();
@@ -308,7 +346,8 @@ var Game = function () {
             //return;
         }
 
-        if (terrainInRect(player.rect())) {
+        if (terrainInRect(player.rect()) || player.x < 0 || player.x >
+                terrain.width || player.y < 0 || player.y > terrain.height) {
             player.hit();
             //jaws.switchGameState(Game);
             //return;
@@ -332,10 +371,21 @@ var Game = function () {
             kills++;
         }
 
+        var health_hits = jaws.collideOneWithMany(player, health_crates);
+        for (i in health_hits) {
+            health_hits[i].dead = true;
+            player.hp += 2;
+            if (player.hp > player.max_hp) player.hp = player.max_hp;
+            get_sound.play();
+        }
 
         removeDead(bullets);
         removeDead(monsters);
         removeDead(explosions);
+        removeDead(health_crates);
+
+        terrain.color = (terrain.color + 1) % 120;
+        terrain.g = parseInt(50 + 50*Math.sin((terrain.color/120)*Math.PI*2));
 
         monster_tick = (monster_tick + 1) % (60 * monster_interval);
         tick++;
@@ -345,7 +395,18 @@ var Game = function () {
         jaws.clear();
 
         viewport.apply(function () {
+            //terrain.draw();
+            jaws.context.save();
             terrain.draw();
+            //var terrain_canvas = terrain.asCanvas();
+            //jaws.context.drawImage(terrain_canvas, 0, 0);
+            jaws.context.globalCompositeOperation = "source-in";
+            jaws.context.fillStyle = "rgb(" + terrain.r + "," + terrain.g
+                                            + "," + terrain.b + ")";
+            jaws.context.fillRect(0, 0, terrain.width, terrain.height);
+            jaws.context.restore();
+
+
             player.draw();
             jaws.context.strokeStyle = "rgb(255,255,255)";
             jaws.context.lineWidth = 4;
@@ -362,6 +423,9 @@ var Game = function () {
             for (i in explosions) {
                 explosions[i].draw();
             }
+            for (i in health_crates) {
+                health_crates[i].draw();
+            }
         });
 
         jaws.context.lineWidth = 2;
@@ -369,10 +433,10 @@ var Game = function () {
         if (player.power == player.max_power) {
             jaws.context.strokeStyle = "rgb(255,0,0)";
         }
-        jaws.context.strokeRect(10, 10, player.power*5, 10);
+        jaws.context.strokeRect(10, 10, player.power* 100/player.max_power, 10);
 
         jaws.context.strokeStyle = "rgb(0,255,0)";
-        jaws.context.strokeRect(10, 25, player.hp * 5, 10);
+        jaws.context.strokeRect(10, 25, player.hp * 100/player.max_hp, 10);
 
         jaws.context.font = "14px monospace";
         jaws.context.fillStyle = "rgb(255,255,255)";
@@ -382,18 +446,68 @@ var Game = function () {
 
 };
 
+var GameOver = function () {
+
+    var game_over_tick;
+    var wait = 1.5;
+
+    this.setup = function () {
+        game_over_tick = 0;
+    };
+
+    this.update = function () {
+        if (game_over_tick >= 60 * wait) {
+            jaws.on_keyup("space", function () {
+                jaws.switchGameState(Game);
+            });
+        } else {
+            game_over_tick++;
+        }
+    };
+    
+    this.draw = function () {
+        jaws.clear();
+        jaws.context.fillStyle = "rgb(0,0,0)";
+        jaws.context.fillRect(0, 0, jaws.width, jaws.height);
+        jaws.context.fillStyle = "rgb(255,255,255)";
+        jaws.context.font = "60px monospace";
+        jaws.context.fillText("GAME OVER", 40, 100);
+        jaws.context.font = "20px monospace";
+        jaws.context.fillText("Survival time: " + clockString(time), 50, 150);
+        jaws.context.fillText("Kills: " + kills.toString(), 150, 180);
+
+        if (time > best_time) {
+            jaws.context.fillText("New highscore!", 113, 240);
+            jaws.context.fillText("Previous best time: " + clockString(best_time), 45, 270);
+        } else {
+            jaws.context.fillText("Best time: " + clockString(best_time), 75, 250);
+        }
+
+
+        if (game_over_tick >= 60 * wait) {
+            jaws.context.fillText("Press space to try again.", 50, 350);
+        }
+    };
+};
+
 jaws.onload = function () {
     jaws.assets.add([
         "player.png",
         "bullet.png",
         "monster.png",
-        "arena.png",
-        "explosion.png",
-        afile("eat"),
-        afile("ble"),
+        //"monster3.png",
+        "arena_big.png",
+        //"explosion.png",
+        "explosion2.png",
+        "health.png",
+        //afile("eat"),
+        //afile("ble"),
         afile("explosion"),
         afile("hurt"),
+        afile("get"),
+        afile("shoot"),
         //afile("bu-tense-and-jealous"),
     ]);
+    best_time = 0;
     jaws.start(Game, {fps: 60});
 };
