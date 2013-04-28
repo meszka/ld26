@@ -159,8 +159,6 @@ var Game = function () {
     };
 
     this.setup = function () {
-        if (time > best_time) best_time = time;
-
         //eat_sound = jaws.assets.get(afile("eat"));
         //death_sound = jaws.assets.get(afile("ble"));
         explosion_sound = jaws.assets.get(afile("explosion"));
@@ -475,9 +473,11 @@ var GameOver = function () {
 
     var game_over_tick;
     var wait = 1.5;
+    var prev_best_time;
 
     this.setup = function () {
         game_over_tick = 0;
+        prev_best_time = best_time;
     };
 
     this.update = function () {
@@ -487,6 +487,13 @@ var GameOver = function () {
             });
         } else {
             game_over_tick++;
+        }
+
+        if (time > prev_best_time) {
+            best_time = time;
+            if (typeof(Storage)!=="undefined") {
+                localStorage.best_time = time;
+            }
         }
     };
     
@@ -501,11 +508,12 @@ var GameOver = function () {
         jaws.context.fillText("Survival time: " + clockString(time), 50, 150);
         jaws.context.fillText("Kills: " + kills.toString(), 150, 180);
 
-        if (time > best_time) {
+        if (time > prev_best_time) {
             jaws.context.fillText("New highscore!", 113, 240);
-            jaws.context.fillText("Previous best time: " + clockString(best_time), 35, 270);
+            jaws.context.fillText("Previous best time: " + clockString(prev_best_time), 35, 270);
+
         } else {
-            jaws.context.fillText("Best time: " + clockString(best_time), 75, 250);
+            jaws.context.fillText("Best time: " + clockString(prev_best_time), 75, 250);
         }
 
 
@@ -533,6 +541,12 @@ jaws.onload = function () {
         afile("shoot"),
         //afile("bu-tense-and-jealous"),
     ]);
-    best_time = 0;
+
+    if (typeof(Storage) !== "undefined") {
+        best_time = localStorage.best_time || 0;
+    } else {
+        best_time = 0;
+    }
+
     jaws.start(Title, {fps: 60});
 };
