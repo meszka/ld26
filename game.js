@@ -68,7 +68,6 @@ function clockString(time) {
     if (mstring.length < 2) { mstring = "0" + mstring };
     if (hstring.length < 2) { hstring = "0" + hstring };
     return hstring + ":" + mstring + ":" + sstring;
-    //return hstring;
 }
 
 function randomSpawnPoint(r) {
@@ -259,7 +258,6 @@ var Game = function () {
                 if (player.power > player.max_power) {
                     player.power = player.max_power;
                 }
-                //player.radius = 8;
             }
             if (player.radius < player.max_radius) {
                 player.radius += 1;
