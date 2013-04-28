@@ -127,8 +127,9 @@ function newMonster(x, y) {
 function newExplosion(x, y) {
     var anim = new jaws.Animation({sprite_sheet: "explosion2.png",
         frame_size: [20, 20],
-        frame_duration: 100});
-    var explosion = new jaws.Sprite({x: x, y: y});
+        frame_duration: 100,
+    });
+    var explosion = new jaws.Sprite({x: x, y: y, anchor: "center"});
     explosion.width = 20;
     explosion.height = 20;
     explosion.anim = anim;
@@ -148,10 +149,11 @@ var Game = function () {
         var vx = Math.sin(Math.PI*(player.ang+0*player.dir)/180) * bullet_speed;
         var vy = Math.cos(Math.PI*(player.ang+0*player.dir)/180) * bullet_speed;
         var new_bullet = new jaws.Sprite({
-            image: "bullet.png", x: player.x, y: player.y
+            image: "bullet.png", x: player.x, y: player.y, anchor: "center"
         });
         new_bullet.vx = vx;
         new_bullet.vy = vy;
+        new_bullet.angle = player.angle;
         bullets.push(new_bullet);
         shoot_sound.play();
     };
@@ -178,8 +180,6 @@ var Game = function () {
 
         viewport = new jaws.Viewport({max_x: terrain.width, max_y: terrain.height});
         raw_pixeldata = getRawData(terrain);
-
-
 
         monster_tick = 0;
         health_tick = 0;
@@ -267,7 +267,7 @@ var Game = function () {
                 player.radius += 1;
             }
             player.ang = (player.ang + 360 + player.speed * player.dir) % 360;
-            player.angle = -player.ang;
+            player.angle = 360 - player.ang;
             player.x = Math.sin(Math.PI*player.ang/180) * player.radius + center.x;
             player.y = Math.cos(Math.PI*player.ang/180) * player.radius + center.y;
             
@@ -393,6 +393,8 @@ var Game = function () {
 
     this.draw = function () {
         jaws.clear();
+        //jaws.context.webkitImageSmoothingEnabled = false;
+        //jaws.context.mozImageSmoothingEnabled = false;
 
         viewport.apply(function () {
             //terrain.draw();
@@ -446,6 +448,29 @@ var Game = function () {
 
 };
 
+var Title = function () {
+    this.setup = function () {
+        jaws.on_keyup("space", function () {
+            jaws.switchGameState(Game); 
+        });
+    };
+
+    this.draw = function () {
+        jaws.clear();
+        jaws.context.fillStyle = "rgb(0,0,0)";
+        jaws.context.fillRect(0, 0, jaws.width, jaws.height);
+        jaws.context.fillStyle = "rgb(255,255,255)";
+        jaws.context.font = "26px monospace";
+        jaws.context.fillText("Single-button Survivor", 25, 90);
+        jaws.context.font = "20px monospace";
+        jaws.context.fillText("The space bar is your friend.", 25, 150);
+        jaws.context.fillText("Tap to move.", 25, 180);
+        jaws.context.fillText("Hold to rotate.", 25, 210);
+        jaws.context.fillText("Release to shoot.", 25, 240);
+        jaws.context.fillText("Press space to begin.", 25, 310);
+    };
+};
+
 var GameOver = function () {
 
     var game_over_tick;
@@ -478,7 +503,7 @@ var GameOver = function () {
 
         if (time > best_time) {
             jaws.context.fillText("New highscore!", 113, 240);
-            jaws.context.fillText("Previous best time: " + clockString(best_time), 45, 270);
+            jaws.context.fillText("Previous best time: " + clockString(best_time), 35, 270);
         } else {
             jaws.context.fillText("Best time: " + clockString(best_time), 75, 250);
         }
@@ -509,5 +534,5 @@ jaws.onload = function () {
         //afile("bu-tense-and-jealous"),
     ]);
     best_time = 0;
-    jaws.start(Game, {fps: 60});
+    jaws.start(Title, {fps: 60});
 };
