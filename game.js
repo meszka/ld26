@@ -83,7 +83,7 @@ function endGame() {
 }
 
 function newMonster(x, y) {
-    var monster = new jaws.Sprite({image: "monster.png", x: x, y: y, anchor: "center"});
+    var monster = new jaws.Sprite({image: "assets/monster.png", x: x, y: y, anchor: "center"});
     if (jaws.collideOneWithMany(monster, monsters).length) {
         return null;
     }
@@ -124,7 +124,7 @@ function newMonster(x, y) {
 }
 
 function newExplosion(x, y) {
-    var anim = new jaws.Animation({sprite_sheet: "explosion2.png",
+    var anim = new jaws.Animation({sprite_sheet: "assets/explosion2.png",
         frame_size: [20, 20],
         frame_duration: 100,
     });
@@ -136,7 +136,7 @@ function newExplosion(x, y) {
 }
 
 function newHealth(x, y) {
-    var health = new jaws.Sprite({image: "health.png", x: x, y: y, anchor: "center"});
+    var health = new jaws.Sprite({image: "assets/health.png", x: x, y: y, anchor: "center"});
     if (jaws.collideOneWithMany(health, health_crates).length) {
         return null;
     }
@@ -148,7 +148,7 @@ var Game = function () {
         var vx = Math.sin(Math.PI*(player.ang+0*player.dir)/180) * bullet_speed;
         var vy = Math.cos(Math.PI*(player.ang+0*player.dir)/180) * bullet_speed;
         var new_bullet = new jaws.Sprite({
-            image: "bullet.png", x: player.x, y: player.y, anchor: "center"
+            image: "assets/bullet.png", x: player.x, y: player.y, anchor: "center"
         });
         new_bullet.vx = vx;
         new_bullet.vy = vy;
@@ -158,18 +158,12 @@ var Game = function () {
     };
 
     this.setup = function () {
-        //eat_sound = jaws.assets.get(afile("eat"));
-        //death_sound = jaws.assets.get(afile("ble"));
-        explosion_sound = jaws.assets.get(afile("explosion"));
-        hurt_sound = jaws.assets.get(afile("hurt"));
-        get_sound = jaws.assets.get(afile("get"));
-        shoot_sound = jaws.assets.get(afile("shoot"));
+        explosion_sound = jaws.assets.get(afile("assets/explosion"));
+        hurt_sound = jaws.assets.get(afile("assets/hurt"));
+        get_sound = jaws.assets.get(afile("assets/get"));
+        shoot_sound = jaws.assets.get(afile("assets/shoot"));
         
-        //music = jaws.assets.get(afile("bu-tense-and-jealous"));
-        //music.loop = true;
-        //music.play();
-
-        terrain = new jaws.Sprite({image: "arena_big.png", x: 0, y: 0});
+        terrain = new jaws.Sprite({image: "assets/arena_big.png", x: 0, y: 0});
         terrain.r = 200;
         terrain.g = 0;
         terrain.b = 0;
@@ -195,7 +189,7 @@ var Game = function () {
         health_crates = [];
 
         var player_pos = randomSpawnPoint(155);
-        player = new jaws.Sprite({image: "player.png", x: player_pos.x, y:
+        player = new jaws.Sprite({image: "assets/player.png", x: player_pos.x, y:
             player_pos.y, anchor: "center"});
         player.dir = 1;
         player.ang = Math.random() * 360;
@@ -522,22 +516,18 @@ var GameOver = function () {
 };
 
 jaws.onload = function () {
+    jaws.assets.path = "assets/";
     jaws.assets.add([
-        "player.png",
-        "bullet.png",
-        "monster.png",
-        //"monster3.png",
-        "arena_big.png",
-        //"explosion.png",
-        "explosion2.png",
-        "health.png",
-        //afile("eat"),
-        //afile("ble"),
-        afile("explosion"),
-        afile("hurt"),
-        afile("get"),
-        afile("shoot"),
-        //afile("bu-tense-and-jealous"),
+        "assets/player.png",
+        "assets/bullet.png",
+        "assets/monster.png",
+        "assets/arena_big.png",
+        "assets/explosion2.png",
+        "assets/health.png",
+        afile("assets/explosion"),
+        afile("assets/hurt"),
+        afile("assets/get"),
+        afile("assets/shoot"),
     ]);
 
     if (typeof(Storage) !== "undefined") {
