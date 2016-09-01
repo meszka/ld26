@@ -212,6 +212,9 @@ function Game() {
         center = {x: player.x, y: player.y};
 
         jaws.on_keyup("space", function () {
+            press = true;
+        });
+        jaws.on_keyup("left_mouse_button", function () {
             press = true; 
         });
         jaws.on_keyup("p", function () {
@@ -244,7 +247,7 @@ function Game() {
                 }
                 player.power = 0;
             }
-            if (jaws.pressed("space")) {
+            if (jaws.pressed("space") || jaws.pressed("left_mouse_button")) {
                 player.speed += player.accel;
                 player.accel += 0.05;
                 if (player.speed > player.max_speed) {
@@ -435,7 +438,10 @@ function Game() {
 function Title() {
     this.setup = function () {
         jaws.on_keyup("space", function () {
-            jaws.switchGameState(Game); 
+            jaws.switchGameState(Game);
+        });
+        jaws.on_keyup("left_mouse_button", function () {
+            jaws.switchGameState(Game);
         });
     };
 
@@ -469,6 +475,9 @@ function GameOver() {
     this.update = function () {
         if (game_over_tick >= 60 * wait) {
             jaws.on_keyup("space", function () {
+                jaws.switchGameState(Game);
+            });
+            jaws.on_keyup("left_mouse_button", function () {
                 jaws.switchGameState(Game);
             });
         } else {
